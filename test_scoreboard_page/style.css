@@ -1,0 +1,58 @@
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f5f5f5;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+.scoreboard {
+  padding: 40px 20px;
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 30px;
+}
+
+.teams {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.team {
+  background-color: white;
+  padding: 20px 30px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  width: 200px;
+}
+
+.team h2 {
+  margin-bottom: 10px;
+}
+
+.score {
+  font-size: 3rem;
+  margin: 10px 0;
+}
+
+.buttons button {
+  margin: 5px;
+  font-size: 1.2rem;
+  padding: 5px 15px;
+  cursor: pointer;
+}
+
+.reset {
+  margin-top: 40px;
+  font-size: 1.2rem;
+  padding: 10px 20px;
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>경제 지표 트렌드 - 기간 선택</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f4f4f4;
+      border-radius: 8px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    select, input {
+      padding: 8px;
+      font-size: 16px;
+    }
+    button {
+      padding: 8px 16px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+    #charts canvas {
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-bottom: 40px;
+    }
+    .loading {
+      text-align: center;
+      font-size: 18px;
+      color: #666;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>경제 지표 트렌드 (기간 선택 가능)</h1>
+
+  <div class="controls">
+    <label for="countrySelect">국가:</label>
+    <select id="countrySelect">
+      <option value="USA">미국</option>
+      <option value="KOR">대한민국</option>
+      <option value="JPN">일본</option>
+      <option value="DEU">독일</option>
+      <option value="FRA">프랑스</option>
+    </select>
+
+    <label for="startYear">시작 연도:</label>
+    <input type="number" id="startYear" value="2010" min="1960" max="2023">
+
+    <label for="endYear">종료 연도:</label>
+    <input type="number" id="endYear" value="2023" min="1960" max="2023">
+
+    <button id="btnFetch">데이터 가져오기</button>
+  </div>
+
+  <div id="loadingIndicator" class="loading" style="display: none;">
+    데이터 로딩 중...
+  </div>
+
+  <div id="charts">
+    <canvas id="trendGDPGrowth" width="900" height="400"></canvas>
+    <canvas id="trendInflation" width="900" height="400"></canvas>
+    <canvas id="trendUnemployment" width="900" height="400"></canvas>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const btnFetch = document.getElementById('btnFetch');
+    const countrySelect = document.getElementById('countrySelect');
+    const startYearInput = document.getElementById('startYear');
+    const endYearInput = document.getElementById('endYear');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+
+    let chartGDP, chartInfl, chartUnemp;
+
+    const indicatorCodes = {
+      'GDP Growth (%)': 'NY.GDP.MKTP.KD.ZG',
+      'Inflation (CPI %)': 'FP.CPI.TOTL.ZG',
+      'Unemployment Rate (%)': 'SL.UEM.TOTL.ZS'
+    };
+
+    btnFetch.addEventListener('click', () => {
+      const countryCode = countrySelect.value;
+      const startYear = parseInt(startYearInput.value);
+      const endYear = parseInt(endYearInput.value);
+
+      if (isNaN(startYear) || isNaN(endYear) || startYear > endYear) {
+        alert("올바른 기간을 입력해주세요.");
+        return;
+      }
+
+      fetchTrendData(countryCode, startYear, endYear);
+    });
+
+    async function fetchTrendData(countryCode, startYear, endYear) {
+      loadingIndicator.style.display = 'block';
+
+      try {
+        const promises = Object.entries(indicatorCodes).map(async ([label, code]) => {
+          const url = `https://api.worldbank.org/v2/country/${countryCode}/indicator/${code}?date=${startYear}:${endYear}&format=json`;
+          const resp = await fetch(url);
+          if (!resp.ok) throw new Error(`API 실패: ${code}`);
+          const json = await resp.json();
+          const dataArr = json[1];
+          const filtered = dataArr
+            .filter(d => d.value !== null)
+            .map(d => ({ year: d.date, value: d.value }))
+            .sort((a, b) => a.year - b.year);
+
+          return { label, data: filtered };
+        });
+
+        const results = await Promise.all(promises);
+        renderCharts(results, countryCode);
+
+      } catch (err) {
+        console.error(err);
+        alert('데이터 가져오기 오류: ' + err.message);
+      } finally {
+        loadingIndicator.style.display = 'none';
+      }
+    }
+
+    function renderCharts(results, countryCode) {
+      const ctxGDP = document.getElementById('trendGDPGrowth').getContext('2d');
+      const ctxInfl = document.getElementById('trendInflation').getContext('2d');
+      const ctxUnemp = document.getElementById('trendUnemployment').getContext('2d');
+
+      if (chartGDP) chartGDP.destroy();
+      if (chartInfl) chartInfl.destroy();
+      if (chartUnemp) chartUnemp.destroy();
+
+      const gdpData = results.find(r => r.label === 'GDP Growth (%)');
+      const inflData = results.find(r => r.label === 'Inflation (CPI %)');
+      const unempData = results.find(r => r.label === 'Unemployment Rate (%)');
+
+      chartGDP = new Chart(ctxGDP, {
+        type: 'line',
+        data: {
+          labels: gdpData.data.map(d => d.year),
+          datasets: [{
+            label: `${countryCode} GDP 성장률 (%)`,
+            data: gdpData.data.map(d => d.value),
+            fill: false,
+            borderColor: 'rgba(54, 162, 235, 1)',
+            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+            tension: 0.1
+          }]
+        },
+        options: {
+          plugins: {
+            title: {
+              display: true,
+              text: 'GDP 성장률 추이'
+            }
+          }
+        }
+      });
+
+      chartInfl = new Chart(ctxInfl, {
+        type: 'line',
+        data: {
+          labels: inflData.data.map(d => d.year),
+          datasets: [{
+            label: `${countryCode} 인플레이션율 (%)`,
+            data: inflData.data.map(d => d.value),
+            fill: false,
+            borderColor: 'rgba(255, 99, 132, 1)',
+            backgroundColor: 'rgba(255, 99, 132, 0.5)',
+            tension: 0.1
+          }]
+        },
+        options: {
+          plugins: {
+            title: {
+              display: true,
+              text: '인플레이션율 추이'
+            }
+          }
+        }
+      });
+
+      chartUnemp = new Chart(ctxUnemp, {
+        type: 'line',
+        data: {
+          labels: unempData.data.map(d => d.year),
+          datasets: [{
+            label: `${countryCode} 실업률 (%)`,
+            data: unempData.data.map(d => d.value),
+            fill: false,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.5)',
+            tension: 0.1
+          }]
+        },
+        options: {
+          plugins: {
+            title: {
+              display: true,
+              text: '실업률 추이'
+            }
+          }
+        }
+      });
+    }
+
+    // 기본 로딩: 대한민국 2010~2023
+    fetchTrendData('KOR', 2010, 2023);
+  </script>
+
+</body>
+</html>
