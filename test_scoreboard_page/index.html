@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>점수판</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="scoreboard">
+    <h1>점수판</h1>
+    <div class="teams">
+      <div class="team" id="teamA">
+        <h2>팀 A</h2>
+        <p class="score" id="scoreA">0</p>
+        <div class="buttons">
+          <button onclick="changeScore('A', 1)">+1</button>
+          <button onclick="changeScore('A', -1)">-1</button>
+        </div>
+      </div>
+      <div class="team" id="teamB">
+        <h2>팀 B</h2>
+        <p class="score" id="scoreB">0</p>
+        <div class="buttons">
+          <button onclick="changeScore('B', 1)">+1</button>
+          <button onclick="changeScore('B', -1)">-1</button>
+        </div>
+      </div>
+    </div>
+    <button class="reset" onclick="resetScores()">리셋</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
