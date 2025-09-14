@@ -6,41 +6,143 @@
   <style>
     body {
       text-align: center;
-      margin-top: 50px;
+      margin: 0;
+      padding: 0;
+      height: 100vh;  /* 화면 전체를 차지하도록 설정 */
       font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;  /* 가로 중앙 정렬 */
+      align-items: center;  /* 세로 중앙 정렬 */
+      position: relative;  /* 부모 요소에 상대적 위치 지정 */
+      flex-direction: column;  /* 이미지들이 세로로 정렬되도록 설정 */
     }
     img {
-      width: 600px;
-      height: auto;
       cursor: pointer;
-      border: 2px solid #595a9e;
+      border: 2px solid #000000;
       border-radius: 10px;
+      display: none; /* 초기에는 이미지를 숨김 */
+      position: absolute;  /* 이미지가 절대 위치로 배치되도록 설정 */
     }
-    button {
+    #myImage {
+      z-index: 2;  /* 앞쪽에 오도록 설정 */
+      width: 50px;  /* 이미지 너비 50px로 설정 */
+    }
+    #backGround {
+      z-index: 1;  /* 배경 이미지가 뒤에 오도록 설정 */
+      width: 100%;  /* 배경 이미지를 화면 너비에 맞게 설정 */
+      height: auto;
+      display: none; /* 초기에는 배경 이미지 숨김 */
+    }
+    #loading {
+      font-size: 18px;
+      color: #595a9e;
       margin-top: 20px;
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
     }
   </style>
 </head>
 <body>
 
   <h1>이미지를 눌러보세요!</h1>
-  <img id="myImage" src="https://i.pinimg.com/236x/97/a7/3f/97a73f0f553157648c90655078101718.jpg" alt="이미지" onclick="changeImage()">
-  <script>
-    const images = [
-      "https://i.pinimg.com/236x/97/a7/3f/97a73f0f553157648c90655078101718.jpg",
-      "https://i.namu.wiki/i/qI0H3qHP6SMune3aF0Fmmu7j3q2a0kj613ndeUyB1aANfPy2I-J3bHNnMxIYCedb7YZXht0v4e6EFEjxIjTg5g.webp",
-      "https://cdn.metavv.com/prod/uploads/thumbnail/images/10043263/167100535142741_md.png"
-    ];
+  <img id="backGround" src="" alt="배경">
+  <img id="myImage" src="" alt="이미지" onclick="changeImage()">
+  <div id="loading">이미지를 로딩 중...</div> <!-- 로딩 메시지 표시 -->
 
+  <script>
+    const API_KEY = "AIzaSyAagQ2Py-QOfMysJiI2Vi2YE8qzksEntEg"; // 🔑 여기에 본인 API 키 입력
+    const query = "cat meme gif";
+    const query_2 = "house";
+    const SEARCH_ENGINE_ID = "b2d082885ce8243e3"; // 본인 Search Engine ID 입력
+
+    let gifs = [];
+    let pictures = [];
+
+    // 이미지 데이터를 비동기적으로 가져오는 함수
+    async function fetchImages() {
+      try {
+        const url = `https://www.googleapis.com/customsearch/v1?q=${encodeURIComponent(query)}&key=${API_KEY}&cx=${SEARCH_ENGINE_ID}&searchType=image&fileType=gif`;
+        const url_2 = `https://www.googleapis.com/customsearch/v1?q=${encodeURIComponent(query_2)}&key=${API_KEY}&cx=${SEARCH_ENGINE_ID}&searchType=image&fileType=jpg`;
+
+        const res = await fetch(url);
+        const res_2 = await fetch(url_2);
+
+        // 응답 상태 확인
+        if (!res.ok) {
+          throw new Error(`HTTP 오류! 상태 코드: ${res.status}`);
+        }
+
+        const data = await res.json();
+        const data_2 = await res_2.json();
+
+        gifs = data.items
+            .filter(item => item.mime === 'image/gif')  // mime 타입이 'image/gif'인 것만 필터링
+            .map(item => item.link);  // GIF 이미지 링크만 추출
+
+        pictures = data_2.items
+            .filter(item => item.mime === 'image/jpeg')  // mime 타입이 'image/jpeg'인 것만 필터링
+            .map(item => item.link);  // JPG 이미지 링크만 추출
+
+        console.log(gifs);  // 콘솔에 GIF 이미지 URL 출력
+        console.log(pictures);  // 콘솔에 JPG 이미지 URL 출력
+
+        if (gifs.length > 0 && pictures.length > 0) {
+          // 첫 번째 이미지로 초기화
+          document.getElementById("myImage").src = gifs[0];
+          document.getElementById("backGround").src = pictures[0];
+          document.getElementById("myImage").style.display = 'block';  // 첫 번째 이미지 표시
+          document.getElementById("backGround").style.display = 'block'; // 배경 이미지 표시
+          document.getElementById('loading').style.display = 'none';  // 로딩 메시지 숨기기
+          setRandomPosition();  // 이미지 위치를 랜덤으로 설정
+        } else {
+          document.getElementById('loading').innerText = 'GIF 또는 배경 이미지가 없습니다.';
+        }
+
+      } catch (error) {
+        console.error("이미지 로딩 실패:", error);
+        document.getElementById('loading').innerText = '이미지 로딩에 실패했습니다. 나중에 다시 시도해주세요.';
+      }
+    }
+
+    // 이미지 위치를 랜덤으로 설정하는 함수
+    function setRandomPosition() {
+      const myImage = document.getElementById("myImage");
+      const bodyWidth = window.innerWidth;
+      const bodyHeight = window.innerHeight;
+
+      // 랜덤 위치 계산
+      const randomX = Math.floor(Math.random() * (bodyWidth - 100));  // 100px은 이미지의 너비
+      const randomY = Math.floor(Math.random() * (bodyHeight - 100)); // 100px은 이미지의 높이
+
+      myImage.style.left = `${randomX}px`;
+      myImage.style.top = `${randomY}px`;
+    }
+
+    // 이미지 변경 함수
     let currentIndex = 0;
+    let currentIndex_2 = 0;
 
     function changeImage() {
-      currentIndex = (currentIndex + 1) % images.length;
-      document.getElementById("myImage").src = images[currentIndex];
+      if (gifs.length > 0) {
+        // 인덱스를 순차적으로 변경하여 이미지를 바꾼다
+        currentIndex = (currentIndex + 1) % gifs.length;
+        document.getElementById("myImage").src = gifs[currentIndex];
+      } else {
+        console.log("GIF 이미지 로딩이 완료되지 않았습니다.");
+      }
+
+      if (pictures.length > 0) {
+        // 인덱스를 순차적으로 변경하여 이미지를 바꾼다
+        currentIndex_2 = (currentIndex_2 + 1) % pictures.length;
+        document.getElementById("backGround").src = pictures[currentIndex_2];
+      } else {
+        console.log("배경 이미지 로딩이 완료되지 않았습니다.");
+      }
+
+      // 이미지 위치 다시 랜덤으로 설정
+      setRandomPosition();
     }
+
+    // 페이지 로딩 시 이미지 가져오기
+    fetchImages();
   </script>
 
 </body>
