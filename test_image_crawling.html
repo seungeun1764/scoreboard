@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cat Memes from Tenor</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      text-align: center;
+    }
+    h1 {
+      margin: 20px;
+    }
+    #gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
+      padding: 20px;
+    }
+    .gif-card {
+      background: white;
+      padding: 10px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .gif-card img {
+      width: 100%;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🐱 Cat Memes from Tenor 🐱</h1>
+  <div id="gallery">Loading...</div>
+
+  <script>
+    const API_KEY = "AIzaSyDfCbbezhqBpkjzq78tEOZiCDpcs4qn3cI"; // 🔑 여기에 본인 API 키 입력
+    const query = "cat stickers";
+    const limit = 50;
+
+    async function fetchGIFs() {
+      const url = `https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(query)}&key=${API_KEY}&limit=${limit}`;
+      const res = await fetch(url);
+      const data = await res.json();
+
+      const gallery = document.getElementById("gallery");
+      gallery.innerHTML = "";
+
+      data.results.forEach(item => {
+        const gifUrl = item.media_formats.gif.url;
+        const div = document.createElement("div");
+        div.className = "gif-card";
+        div.innerHTML = `<img src="${gifUrl}" alt="gif">`;
+        gallery.appendChild(div);
+      });
+    }
+
+    fetchGIFs();
+  </script>
+</body>
+</html>
